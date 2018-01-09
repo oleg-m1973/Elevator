@@ -86,16 +86,13 @@ void CElevatorDlg::PressElevatorButton(int ctrl_id, size_t floor)
 		return;
 
 	const auto check = ::SendDlgItemMessage(*this, ctrl_id, BM_GETCHECK, 0, 0);
-	if (check != BST_CHECKED)
-		return;
-
-	//auto msg = TS::FormatStr("Button pressed", floor).str();
-	//::MessageBoxA(m_hWnd, msg.c_str(), Inner?"Cabin": "Call", MB_OK);
-	if constexpr (Cabin)
-		m_spElevator->PressButton(floor);
-	else
-		m_spElevator->CallLift(floor);
-
+	if (check == BST_CHECKED)
+	{
+		if constexpr (Cabin)
+			m_spElevator->PressButton(floor);
+		else
+			m_spElevator->CallLift(floor);
+	}
 	UpdateControls();
 }
 
@@ -142,14 +139,6 @@ void CElevatorDlg::OnInitDialog()
 	for (size_t i = _min_floor; i <= _floors; ++i)
 		::SendDlgItemMessage(*this, IDC_FLOORS, CB_ADDSTRING, 0, LPARAM(std::to_wstring(i).c_str()));
 
-
-	//CElevatorParams params;
-	//::SendDlgItemMessage(*this, IDC_FLOORS, CB_SETCURSEL, params.m_floors - _min_floor, 0);
-
-	//::SetDlgItemText(*this, IDC_ELEVATOR_SPEED, std::to_wstring(params.m_speed).c_str());
-	//::SetDlgItemText(*this, IDC_FLOOR_HEIGHT, std::to_wstring(params.m_floor_height).c_str());
-	//::SetDlgItemText(*this, IDC_CLOSE_TIME, std::to_wstring(params.m_close_tm.count() / 1000.0).c_str());
-
 	ResetElevator(true);
 }
 
@@ -184,7 +173,7 @@ void CElevatorDlg::ResetElevator(bool init)
 		}
 
 		params.m_speed = GetDlgItemDouble(*this, IDC_ELEVATOR_SPEED);
-		if (params.m_speed < 0)
+		if (params.m_speed <= 0)
 		{
 			ShowMessage(MB_ICONERROR | MB_OK, "Error", "Invalid elevator speed", params.m_speed);
 			return;
@@ -205,9 +194,9 @@ void CElevatorDlg::ResetElevator(bool init)
 		::PostMessage(*this, msg_elevator_event, 0, LPARAM(ev));
 	});
 
-	for (size_t i = 0; i < _floors; ++i)
+	for (int i = 0; i < _floors; ++i)
 	{
-		const bool enable = i < params.m_floors;
+		const bool enable = i < int(params.m_floors);
 		ResetButton(*this, _buttons_id + i, enable);
 		ResetButton(*this, _calls_id + i, enable);
 	}
@@ -273,7 +262,7 @@ void CElevatorDlg::UpdateControls(CElevator::TEvent ev)
 	const auto buttons = lift.GetButtons();
 	const auto calls = lift.GetCalls();
 
-	for (size_t i = 0; i < params.m_floors; ++i, mask <<= 1)
+	for (int i = 0; i < int(params.m_floors); ++i, mask <<= 1)
 	{
 		::SendDlgItemMessage(*this, _buttons_id + i, BM_SETCHECK, buttons & mask? BST_CHECKED: BST_UNCHECKED, 0);		
 		::SendDlgItemMessage(*this, _calls_id + i, BM_SETCHECK, calls & mask? BST_CHECKED: BST_UNCHECKED, 0);		
