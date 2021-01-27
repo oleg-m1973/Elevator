@@ -1,5 +1,6 @@
 #pragma once
 #include "SyncObjs.h"
+#include "Format.h"
 
 #include <chrono>
 #include <map>
@@ -358,7 +359,7 @@ protected:
 				return;
 
 			RaiseEvent(ev_start);
-			m_motor.Start(m_params.m_speed * (1000.0 * m_dir));
+			m_motor.Start(m_params.m_speed * (1000.0 * int(m_dir)));
 		}
 	}
 
